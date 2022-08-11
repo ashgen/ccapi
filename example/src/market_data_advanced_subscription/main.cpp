@@ -8,10 +8,18 @@ class MyEventHandler : public EventHandler {
     return true;
   }
 };
+class TradeEventHandler : public EventHandler {
+ public:
+  bool processEvent(const Event& event, Session* session) override {
+    std::cout << toString(event) + "\n" << std::endl;
+    return true;
+  }
+};
 } /* namespace ccapi */
 using ::ccapi::Event;
 using ::ccapi::EventDispatcher;
 using ::ccapi::MyEventHandler;
+using ::ccapi::TradeEventHandler;
 using ::ccapi::Session;
 using ::ccapi::SessionConfigs;
 using ::ccapi::SessionOptions;
@@ -31,12 +39,27 @@ int main(int argc, char** argv) {
     SessionOptions sessionOptions;
     SessionConfigs sessionConfigs;
     MyEventHandler eventHandler;
-    EventDispatcher eventDispatcher(2);
+    TradeEventHandler teventHandler;
+    EventDispatcher eventDispatcher(4);
     Session session(sessionOptions, sessionConfigs, &eventHandler, &eventDispatcher);
-    Subscription subscription("coinbase", "BTC-USD", "MARKET_DEPTH");
-    session.subscribe(subscription);
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    Session sessionx(sessionOptions, sessionConfigs, &teventHandler, &eventDispatcher);
+    std::vector<Subscription> subscriptionList;
+    subscriptionList.emplace_back("binance-usds-futures", "BTCUSDT", "MARKET_DEPTH", "", "1");
+    subscriptionList.emplace_back("binance-usds-futures", "BTCBUSD", "MARKET_DEPTH", "", "2");
+    session.subscribe(subscriptionList);
+
+    std::vector<ccapi::Request> tsubscriptionList;
+    ccapi::Request r1(ccapi::Request::Operation::GET_RECENT_TRADES,"binance-usds-futures", "BTCUSDT","3");
+    r1.appendParam({{"limit","1"}});
+    ccapi::Request r2(ccapi::Request::Operation::GET_RECENT_TRADES,"binance-usds-futures", "BTCBUSD","4");
+    r2.appendParam({{"limit","1"}});
+    tsubscriptionList.emplace_back(r1);
+    tsubscriptionList.emplace_back(r2);
+    sessionx.sendRequest(tsubscriptionList);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1000));
     session.stop();
+    sessionx.stop();
     eventDispatcher.stop();
   } else if (mode == "handle_events_in_batching_mode") {
     SessionOptions sessionOptions;
