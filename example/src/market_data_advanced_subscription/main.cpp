@@ -112,6 +112,19 @@ using ::ccapi::SessionConfigs;
 using ::ccapi::SessionOptions;
 using ::ccapi::Subscription;
 using ::ccapi::toString;
+
+static const vector<std::string> BINANCE_FUTURES_SYMBOLS = {
+    "BTCBUSD", "BTCUSDT", "ETHBUSD",   "ETHUSDT",   "SOLBUSD",  "SOLUSDT",  "DOGEBUSD", "DOGEUSDT",
+    "DOTBUSD", "DOTUSDT", "MATICBUSD", "MATICUSDT", "AVAXBUSD", "AVAXUSDT", "TRXBUSD",  "TRXUSDT",
+
+};
+
+static const vector<std::string> FTX_SYMBOLS =
+        {
+        "BTC-USD",   "BTC-USDT",  "BTC-PERP",  "ETH-USD",   "ETH-USDT", "ETH-PERP", "SOL-USD",   "SOL-USDT",   "SOL-PERP",
+        "DOGE-USD",  "DOGE-USDT", "DOGE-PERP", "DOT-USD",   "DOT-USDT", "DOT-PERP", "MATIC-USD", "MATIC-PERP", "AVAX-USD",
+        "AVAX-USDT", "AVAX-PERP", "SHIB-USD",  "SHIB-PERP", "TRX-USD",  "TRX-USDT", "TRX-PERP",
+};
 int main(int argc, char** argv) {
     SessionOptions sessionOptions;
     SessionConfigs sessionConfigs;
@@ -120,23 +133,17 @@ int main(int argc, char** argv) {
     EventDispatcher eventDispatcher(4);
     Session session(sessionOptions, sessionConfigs, &eventHandler, &eventDispatcher);
     Session sessionx(sessionOptions, sessionConfigs, &teventHandler, &eventDispatcher);
-    std::vector<Subscription> subscriptionList;
-    subscriptionList.emplace_back("binance-usds-futures", "BTCUSDT", "MARKET_DEPTH", "", "BTCUSDT");
-    subscriptionList.emplace_back("binance-usds-futures", "BTCBUSD", "MARKET_DEPTH", "", "BTCBUSD");
+    std::vector<Subscription> subscriptionList,tsubscriptionList;
+    for(auto v:BINANCE_FUTURES_SYMBOLS){
+      subscriptionList.emplace_back("binance-usds-futures", v, "MARKET_DEPTH", "",v);
+      tsubscriptionList.emplace_back("binance-usds-futures",v,"AGG_TRADE","",v );
+    }
+  for(auto v:FTX_SYMBOLS){
+    subscriptionList.emplace_back("ftx", v, "MARKET_DEPTH", "",v);
+    tsubscriptionList.emplace_back("ftx",v,"TRADE","",v );
+  }
     session.subscribe(subscriptionList);
-
-  std::vector<Subscription> tsubscriptionList;
-  tsubscriptionList.emplace_back("binance-usds-futures", "BTCUSDT","AGG_TRADE","","BTCUSDT" );
-  tsubscriptionList.emplace_back("binance-usds-futures", "BTCBUSD","AGG_TRADE","","BTCBUSD" );
-  sessionx.subscribe(tsubscriptionList);
-    //std::vector<ccapi::Request> tsubscriptionList;
-    //ccapi::Request r1(ccapi::Request::Operation::GET_RECENT_TRADES,"binance-usds-futures", "BTCUSDT","3");
-    //r1.appendParam({{"limit","1"}});
-    //ccapi::Request r2(ccapi::Request::Operation::GET_RECENT_TRADES,"binance-usds-futures", "BTCBUSD","4");
-    //r2.appendParam({{"limit","1"}});
-    //tsubscriptionList.emplace_back(r1);
-    //tsubscriptionList.emplace_back(r2);
-    //sessionx.sendRequest(tsubscriptionList);
+    sessionx.subscribe(tsubscriptionList);
     quote_logger.info("timeRecieved,exchangeTime,symbol,bidPrice,askPrice,bidSize,askSize");
     trade_logger.info("timeRecieved,exchangeTime,symbol,price,size,side,tradeID");
 

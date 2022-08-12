@@ -1,7 +1,6 @@
 set(NAME market_data_advanced_subscription)
 project(${NAME})
-add_compile_definitions(CCAPI_ENABLE_SERVICE_MARKET_DATA)
-add_compile_definitions(CCAPI_ENABLE_EXCHANGE_BINANCE_USDS_FUTURES)
+add_compile_definitions(CCAPI_ENABLE_SERVICE_MARKET_DATA CCAPI_ENABLE_EXCHANGE_BINANCE_USDS_FUTURES CCAPI_ENABLE_EXCHANGE_FTX)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 add_executable(${NAME} main.cpp)
 target_link_libraries(${NAME} reckless)
