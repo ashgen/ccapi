@@ -31,8 +31,8 @@ Logger* Logger::logger = nullptr;  // This line is needed.
 class MyEventHandler : public EventHandler {
  public:
   bool processEvent(const Event& event, Session* session) override {
-  if(event.getType() != Event::Type::SUBSCRIPTION_DATA)
-    return true;
+    if(event.getType() != Event::Type::SUBSCRIPTION_DATA)
+      return true;
     std::lock_guard<std::mutex> lock(m);
     for (const auto& message : event.getMessageList()) {
       auto correlationId = message.getCorrelationIdList().at(0);
@@ -113,6 +113,23 @@ using ::ccapi::SessionOptions;
 using ::ccapi::Subscription;
 using ::ccapi::toString;
 
+static const vector<std::string> BINANCE_SPOT_SYMBOLS =
+    {
+        "BTC-BUSD", "BTC-USDT",   "ETH-BUSD",   "ETH-USDT",  "SOL-BUSD",  "SOL-USDT",  "DOGE-BUSD", "DOGE-USDT", "DOT-BUSD",
+        "DOT-USDT", "MATIC-BUSD", "MATIC-USDT", "AVAX-BUSD", "AVAX-USDT", "SHIB-BUSD", "SHIB-USDT", "TRX-BUSD",  "TRX-USDT",
+    };
+
+static const vector<std::string> COINBASE_SYMBOLS =
+    {
+        "BTC-USD",   "BTC-USDT", "ETH-USD",  "ETH-USDT",  "SOL-USD",  "SOL-USDT",  "DOGE-USD",
+        "DOGE-USDT", "DOT-USD",  "DOT-USDT", "MATIC-USD", "AVAX-USD", "AVAX-USDT", "SHIB-USD",
+    };
+static const vector<std::string> KRAKEN_SYMBOLS =
+    {
+        "BTC-USD", "BTC-USDT", "ETH-USD", "ETH-USDT", "SOL-USD", "DOGE-USD", "DOGE-USDT", "DOT-USD", "DOT-USDT", "MATIC-USD", "AVAX-USD", "SHIB-USD", "TRX-USD",
+    };
+
+
 static const vector<std::string> BINANCE_FUTURES_SYMBOLS = {
     "BTCBUSD", "BTCUSDT", "ETHBUSD",   "ETHUSDT",   "SOLBUSD",  "SOLUSDT",  "DOGEBUSD", "DOGEUSDT",
     "DOTBUSD", "DOTUSDT", "MATICBUSD", "MATICUSDT", "AVAXBUSD", "AVAXUSDT", "TRXBUSD",  "TRXUSDT",
@@ -120,40 +137,55 @@ static const vector<std::string> BINANCE_FUTURES_SYMBOLS = {
 };
 
 static const vector<std::string> FTX_SYMBOLS =
-        {
+    {
         "BTC-USD",   "BTC-USDT",  "BTC-PERP",  "ETH-USD",   "ETH-USDT", "ETH-PERP", "SOL-USD",   "SOL-USDT",   "SOL-PERP",
         "DOGE-USD",  "DOGE-USDT", "DOGE-PERP", "DOT-USD",   "DOT-USDT", "DOT-PERP", "MATIC-USD", "MATIC-PERP", "AVAX-USD",
         "AVAX-USDT", "AVAX-PERP", "SHIB-USD",  "SHIB-PERP", "TRX-USD",  "TRX-USDT", "TRX-PERP",
-};
-int main(int argc, char** argv) {
-    SessionOptions sessionOptions;
-    SessionConfigs sessionConfigs;
-    MyEventHandler eventHandler;
-    TradeEventHandler teventHandler;
-    EventDispatcher eventDispatcher(4);
-    Session session(sessionOptions, sessionConfigs, &eventHandler, &eventDispatcher);
-    Session sessionx(sessionOptions, sessionConfigs, &teventHandler, &eventDispatcher);
-    std::vector<Subscription> subscriptionList,tsubscriptionList;
-    for(auto v:BINANCE_FUTURES_SYMBOLS){
-      subscriptionList.emplace_back("binance-usds-futures", v, "MARKET_DEPTH", "",v);
-      tsubscriptionList.emplace_back("binance-usds-futures",v,"AGG_TRADE","",v );
-    }
+    };
+void setupSubscriptions(vector<Subscription>& subscriptionList,vector<Subscription>& tsubscriptionList){
+  for(auto v:BINANCE_FUTURES_SYMBOLS){
+    subscriptionList.emplace_back("binance-usds-futures", v, "MARKET_DEPTH", "",v);
+    tsubscriptionList.emplace_back("binance-usds-futures",v,"AGG_TRADE","",v );
+  }
+  for(auto v:BINANCE_SPOT_SYMBOLS){
+    subscriptionList.emplace_back("binance", v, "MARKET_DEPTH", "",v);
+    tsubscriptionList.emplace_back("binance",v,"AGG_TRADE","",v );
+  }
   for(auto v:FTX_SYMBOLS){
     subscriptionList.emplace_back("ftx", v, "MARKET_DEPTH", "",v);
     tsubscriptionList.emplace_back("ftx",v,"TRADE","",v );
   }
-    session.subscribe(subscriptionList);
-    sessionx.subscribe(tsubscriptionList);
-    quote_logger.info("timeRecieved,exchangeTime,symbol,bidPrice,askPrice,bidSize,askSize");
-    trade_logger.info("timeRecieved,exchangeTime,symbol,price,size,side,tradeID");
+  for(auto v:COINBASE_SYMBOLS){
+    subscriptionList.emplace_back("coinbase", v, "MARKET_DEPTH", "",v);
+    tsubscriptionList.emplace_back("coinbase",v,"TRADE","",v );
+  }
+  for(auto v:KRAKEN_SYMBOLS){
+    subscriptionList.emplace_back("kraken", v, "MARKET_DEPTH", "",v);
+    tsubscriptionList.emplace_back("kraken",v,"TRADE","",v );
+  }
 
-    while(true){
+}
+int main(int argc, char** argv) {
+  SessionOptions sessionOptions;
+  SessionConfigs sessionConfigs;
+  MyEventHandler eventHandler;
+  TradeEventHandler teventHandler;
+  EventDispatcher eventDispatcher(4);
+  Session session(sessionOptions, sessionConfigs, &eventHandler, &eventDispatcher);
+  Session sessionx(sessionOptions, sessionConfigs, &teventHandler, &eventDispatcher);
+  std::vector<Subscription> subscriptionList,tsubscriptionList;
+  setupSubscriptions(subscriptionList,tsubscriptionList);
+  session.subscribe(subscriptionList);
+  sessionx.subscribe(tsubscriptionList);
+  quote_logger.info("timeRecieved,exchangeTime,symbol,bidPrice,askPrice,bidSize,askSize");
+  trade_logger.info("timeRecieved,exchangeTime,symbol,price,size,side,tradeID");
+  while(true){
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+  }
+  session.stop();
+  sessionx.stop();
+  eventDispatcher.stop();
 
-    }
-    session.stop();
-    sessionx.stop();
-    eventDispatcher.stop();
-
-    std::cout << "Bye" << std::endl;
+  std::cout << "Bye" << std::endl;
   return EXIT_SUCCESS;
 }
