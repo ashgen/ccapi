@@ -142,29 +142,6 @@ static const vector<std::string> FTX_SYMBOLS =
         "DOGE-USD",  "DOGE-USDT", "DOGE-PERP", "DOT-USD",   "DOT-USDT", "DOT-PERP", "MATIC-USD", "MATIC-PERP", "AVAX-USD",
         "AVAX-USDT", "AVAX-PERP", "SHIB-USD",  "SHIB-PERP", "TRX-USD",  "TRX-USDT", "TRX-PERP",
     };
-void setupSubscriptions(vector<Subscription>& subscriptionList,vector<Subscription>& tsubscriptionList){
-  for(auto v:BINANCE_FUTURES_SYMBOLS){
-    subscriptionList.emplace_back("binance-usds-futures", v, "MARKET_DEPTH", "",v);
-    tsubscriptionList.emplace_back("binance-usds-futures",v,"AGG_TRADE","",v );
-  }
-  for(auto v:BINANCE_SPOT_SYMBOLS){
-    subscriptionList.emplace_back("binance", v, "MARKET_DEPTH", "",v);
-    tsubscriptionList.emplace_back("binance",v,"AGG_TRADE","",v );
-  }
-  for(auto v:FTX_SYMBOLS){
-    subscriptionList.emplace_back("ftx", v, "MARKET_DEPTH", "",v);
-    tsubscriptionList.emplace_back("ftx",v,"TRADE","",v );
-  }
-  for(auto v:COINBASE_SYMBOLS){
-    subscriptionList.emplace_back("coinbase", v, "MARKET_DEPTH", "",v);
-    tsubscriptionList.emplace_back("coinbase",v,"TRADE","",v );
-  }
-  for(auto v:KRAKEN_SYMBOLS){
-    subscriptionList.emplace_back("kraken", v, "MARKET_DEPTH", "",v);
-    tsubscriptionList.emplace_back("kraken",v,"TRADE","",v );
-  }
-
-}
 int main(int argc, char** argv) {
   SessionOptions sessionOptions;
   SessionConfigs sessionConfigs;
@@ -174,13 +151,31 @@ int main(int argc, char** argv) {
   Session session(sessionOptions, sessionConfigs, &eventHandler, &eventDispatcher);
   Session sessionx(sessionOptions, sessionConfigs, &teventHandler, &eventDispatcher);
   std::vector<Subscription> subscriptionList,tsubscriptionList;
-  setupSubscriptions(subscriptionList,tsubscriptionList);
+  for(auto v:BINANCE_FUTURES_SYMBOLS){
+    subscriptionList.emplace_back("binance-usds-futures", v, "MARKET_DEPTH", "","BINANCE_FUTURES."+ v);
+    tsubscriptionList.emplace_back("binance-usds-futures",v,"AGG_TRADE","","BINANCE_FUTURES." + v );
+  }
+  for(auto v:BINANCE_SPOT_SYMBOLS){
+    subscriptionList.emplace_back("binance", v, "MARKET_DEPTH", "","BINANCE_SPOT."+v);
+    tsubscriptionList.emplace_back("binance",v,"AGG_TRADE","","BINANCE_SPOT."+v );
+  }
+  for(auto v:FTX_SYMBOLS){
+    subscriptionList.emplace_back("ftx", v, "MARKET_DEPTH", "","FTX." + v);
+    tsubscriptionList.emplace_back("ftx",v,"TRADE","","FTX." + v );
+  }
+  for(auto v:COINBASE_SYMBOLS){
+    subscriptionList.emplace_back("coinbase", v, "MARKET_DEPTH", "","COINBASE." + v);
+    tsubscriptionList.emplace_back("coinbase",v,"TRADE","","COINBASE." + v );
+  }
+  for(auto v:KRAKEN_SYMBOLS){
+    subscriptionList.emplace_back("kraken", v, "MARKET_DEPTH", "","KRAKEN."+v);
+    tsubscriptionList.emplace_back("kraken",v,"TRADE","","KRAKEN." + v );
+  }
   session.subscribe(subscriptionList);
   sessionx.subscribe(tsubscriptionList);
   quote_logger.info("timeRecieved,exchangeTime,symbol,bidPrice,askPrice,bidSize,askSize");
   trade_logger.info("timeRecieved,exchangeTime,symbol,price,size,side,tradeID");
   while(true){
-    std::this_thread::sleep_for(std::chrono::seconds(10));
   }
   session.stop();
   sessionx.stop();
