@@ -93,7 +93,7 @@ if __name__ == "__main__":
             tmpFileNameWithDir = f"{historicalMarketDataDirectory}/tmp__{fileName}"
             if not pathlib.Path(f"{fileNameWithDir}.csv").is_file():
                 print(f"Start download data for {dataType}, {exchange}, {baseAsset}-{quoteAsset}, {currentDate.isoformat()}.")
-                requestUrl = f"{urlBase}/{dataType}/{exchange}/{baseAsset}-{quoteAsset}?startTime={currentDate.isoformat()}"
+                requestUrl = f"{urlBase}/{dataType}/{exchange}/{baseAsset}{quoteAsset}?startTime={currentDate.isoformat()}"
                 if dataType == "market-depth":
                     requestUrl += f"&depth={depth}"
                 urls = session.get(requestUrl).json()["urls"]

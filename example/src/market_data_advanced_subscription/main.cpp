@@ -4,8 +4,8 @@
 #include "reckless/severity_log.hpp"
 using log_t = reckless::severity_log<reckless::indent<4>, ','>;
 using namespace std;
-static const string tradeLogFile = "logs/trade.csv";
-static const string quoteLogFile = "logs/quote.csv";
+static const string tradeLogFile = "trade.csv";
+static const string quoteLogFile = "quote.csv";
 static constexpr size_t QUEUE_SIZE = 4096 * 4096;
 
 reckless::file_writer quote_writer(quoteLogFile.c_str());
@@ -24,7 +24,19 @@ void stick_this_thread_to_core(std::thread& _thread,int core_id) {
     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
   }
 }
-
+void splitExchangeAndSym(std::string& original,std::string& exchange,std::string& sym){
+  char *t = const_cast<char*>(original.c_str());
+  char *tokenValue = strtok(t, ".");
+  int counter=0;
+  while (tokenValue != NULL)
+  {
+    if(counter == 0)
+      exchange = tokenValue;
+    else
+      sym = tokenValue;
+    counter++;
+  }
+}
 
 namespace ccapi {
 Logger* Logger::logger = nullptr;  // This line is needed.
